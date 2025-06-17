@@ -8,8 +8,8 @@ docker volume prune -f
 docker network prune -f
 docker system prune -a -f
 
-echo "📦 Установка зависимостей и сборка backend..."
-docker-compose build backend
+echo "⚙️  Пересборка всех сервисов..."
+docker-compose build --no-cache
 
-echo "🚀 Запускаем весь проект..."
+echo "🚀 Запускаем проект..."
 docker-compose up
