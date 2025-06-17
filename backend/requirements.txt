@@ -13,6 +13,7 @@ psycopg[binary]
 pgvector
 python-dotenv
 aiofiles
+PyMuPDF
 
 # LLM / Embedding stack
 sentence-transformers
