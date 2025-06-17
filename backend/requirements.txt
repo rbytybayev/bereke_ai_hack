@@ -17,6 +17,8 @@ PyMuPDF
 httpx
 
 # LLM / Embedding stack
+pandas
+numpy
 sentence-transformers
 transformers
 torch
