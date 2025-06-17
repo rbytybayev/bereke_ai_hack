@@ -1,13 +1,33 @@
 fastapi
 uvicorn[standard]
-sqlalchemy
-psycopg2-binary
+python-multipart
+pydantic
 pdfplumber
 pytesseract
-sentence-transformers
+opencv-python-headless
+Pillow
+langdetect
+sqlalchemy
+asyncpg
+psycopg[binary]
 pgvector
 python-dotenv
-python-multipart
-langdetect
-httpx
-lxml
+aiofiles
+
+# LLM / Embedding stack
+sentence-transformers
+transformers
+torch
+llama-cpp-python==0.2.63
+scikit-learn
+tqdm
+
+# Hugging Face client
+huggingface-hub
+
+# Auth & JWT
+python-jose
+passlib[bcrypt]
+
+# Alembic for migrations
+alembic

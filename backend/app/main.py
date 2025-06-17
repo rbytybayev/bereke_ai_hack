@@ -1,18 +1,16 @@
-# app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from .api import router
-from .db import Base, engine
+from app.api.routes import router as api_router
 
-app = FastAPI(title="AI Compliance Assistant")
+app = FastAPI(title="Currency Compliance Validator")
+
+# CORS setup (можно уточнить домены позже)
 app.add_middleware(
-  CORSMiddleware,
-  allow_origins=["*"],  # или ["*"] для всех
-  allow_credentials=True,
-  allow_methods=["*"],
-  allow_headers=["*"],
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-# создаем таблицы (для dev)
-Base.metadata.create_all(bind=engine)
 
-app.include_router(router, prefix="")
+app.include_router(api_router, prefix="/api")

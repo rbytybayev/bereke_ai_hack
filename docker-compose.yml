@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  db:
+    image: ankane/pgvector
+    restart: always
+    container_name: database_vector
+    env_file:
+      - ./backend/.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: backend_fastapi
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env
+    environment:
+      - OPENBLAS_NUM_THREADS=1
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    container_name: frontend_react
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
