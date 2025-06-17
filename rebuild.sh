@@ -1,10 +1,15 @@
 #!/bin/bash
 
-echo "🛑 Останавливаем и очищаем контейнеры..."
-docker-compose down -v
+echo "🧹 Полная очистка Docker окружения..."
+docker-compose down -v --remove-orphans
+docker container prune -f
+docker image prune -a -f
+docker volume prune -f
+docker network prune -f
+docker system prune -a -f
 
-echo "⚙️  Собираем backend..."
+echo "📦 Установка зависимостей и сборка backend..."
 docker-compose build backend
 
-echo "🚀 Запускаем проект..."
+echo "🚀 Запускаем весь проект..."
 docker-compose up
