@@ -1,10 +1,8 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Enum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from sqlalchemy.ext.declarative import declarative_base
+from app.db.session import Base  # ✅ единый Base
 import enum
-
-Base = declarative_base()
 
 class StatusEnum(str, enum.Enum):
     ACCEPTED = "Принят"

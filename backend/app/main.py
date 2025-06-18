@@ -3,11 +3,11 @@ import subprocess
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from dotenv import load_dotenv
+
 from app.api.routes import router as api_router
-from app.db.session import Base
-from app.db import async_engine 
+from app.db.session import Base, engine  # <-- импорт из session.py
+import app.models  # <-- обязательно! Регистрирует модели
 
 # === Загрузка переменных из .env ===
 load_dotenv()
@@ -37,5 +37,5 @@ async def setup_db():
         subprocess.run(["alembic", "upgrade", "head"])
     else:
         print("🛠️ Создаём таблицы напрямую (SQLAlchemy Base)...")
-        async with async_engine.begin() as conn:
+        async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)

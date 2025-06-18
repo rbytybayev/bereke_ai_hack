@@ -7,22 +7,21 @@ from alembic import context
 import os
 import sys
 
-# подключаем проектные модели
+from dotenv import load_dotenv
+load_dotenv()
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from app.db.session import Base
-
-target_metadata = Base.metadata
-from app.models.user_document import User, Document
-from app.models.sanctions import Sanction
-
+import app.models  # ✅ гарантируем, что все модели попадут в metadata
 
 config = context.config
 fileConfig(config.config_file_name)
 
-# несколько metadata из разных моделей
+target_metadata = Base.metadata
 
 def run_migrations_offline():
-    url = config.get_main_option("sqlalchemy.url")
+    url = os.getenv("DATABASE_URL")  # 🔄 используем .env
     context.configure(
         url=url,
         target_metadata=target_metadata,

@@ -1,8 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text
 from sqlalchemy.sql import func
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+from app.db.session import Base  # ✅ единый Base
 
 class Sanction(Base):
     __tablename__ = "sanctions"
