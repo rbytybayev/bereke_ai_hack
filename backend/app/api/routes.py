@@ -17,6 +17,7 @@ from app.db.session import get_async_session
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import Form
 import uuid
 import os
 
@@ -42,16 +43,19 @@ async def get_my_documents(current_user: User = Depends(get_current_user), sessi
     ]
 
 @router.post("/auth/register")
-async def register(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_async_session)):
-    result = await session.execute(select(User).where(User.username == form_data.username))
+async def register(
+    username: str = Form(...),
+    password: str = Form(...),
+    session: AsyncSession = Depends(get_async_session)
+    ):
+    result = await session.execute(select(User).where(User.username == username))
     if result.scalar():
         raise HTTPException(status_code=400, detail="Username already registered")
 
-    user = User(username=form_data.username, hashed_password=get_password_hash(form_data.password))
+    user = User(username=username, hashed_password=get_password_hash(password))
     session.add(user)
     await session.commit()
     return {"status": "registered"}
-
 
 @router.post("/auth/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_async_session)):

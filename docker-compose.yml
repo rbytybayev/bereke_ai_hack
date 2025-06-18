@@ -5,6 +5,8 @@ services:
     image: ankane/pgvector
     restart: always
     container_name: database_vector
+    ports:
+      - "5444:5432"
     env_file:
       - ./backend/.env
     volumes:

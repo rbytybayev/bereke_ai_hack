@@ -12,4 +12,6 @@ echo "⚙️  Пересборка всех сервисов..."
 docker-compose build --no-cache
 
 echo "🚀 Запускаем проект..."
-docker-compose up
+docker-compose up -d
+echo "📦 Применяем миграции Alembic..."
+echo "✅ Готово!"
