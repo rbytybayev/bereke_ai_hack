@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from time import time
 
 from app.services.file_ops import save_upload_file
 from app.services.image_preprocess import preprocess_pdf
@@ -97,18 +98,55 @@ async def upload_pdf(
 
     file_id = str(uuid.uuid4())
     filepath = os.path.join(UPLOAD_DIR, f"{file_id}.pdf")
-    await save_upload_file(file, filepath)
 
     try:
-        images = preprocess_pdf(filepath)
-        extracted_text = extract_text_from_pdf(images)
-        language = detect_language(extracted_text)
-        has_signature = detect_signature_presence(images)
-        contract_dict = extract_contract_parameters(extracted_text)
-        contract_data = ContractData(**contract_dict)
-        checks = await run_checks(contract_data)
-        verdict = generate_summary_and_verdict(checks)
+        print("🚀 Начало обработки документа")
+        start_all = time()
 
+        # 1. Сохранение файла
+        start = time()
+        await save_upload_file(file, filepath)
+        print(f"💾 Сохранение PDF: {time() - start:.2f} сек")
+
+        # 2. Препроцессинг
+        start = time()
+        images = preprocess_pdf(filepath)
+        print(f"🖼️ preprocess_pdf: {time() - start:.2f} сек")
+
+        # 3. OCR
+        start = time()
+        extracted_text = extract_text_from_pdf(images)
+        print(f"🔤 OCR (extract_text_from_pdf): {time() - start:.2f} сек")
+
+        # 4. Определение языка
+        start = time()
+        language = detect_language(extracted_text)
+        print(f"🌐 Язык: {language} (за {time() - start:.2f} сек)")
+
+        # 5. Детекция подписи
+        start = time()
+        has_signature = detect_signature_presence(images)
+        print(f"✍️ Подпись найдена: {has_signature} (за {time() - start:.2f} сек)")
+
+        # 6. Извлечение параметров договора
+        start = time()
+        contract_dict = extract_contract_parameters(extracted_text)
+        print(f"📄 Извлечено полей: {list(contract_dict.keys())} (за {time() - start:.2f} сек)")
+
+        # 7. Валидация
+        contract_data = ContractData(**contract_dict)
+
+        # 8. Проверки
+        start = time()
+        checks = await run_checks(contract_data)
+        print(f"✅ Проверки завершены: {len(checks)} (за {time() - start:.2f} сек)")
+
+        # 9. Вердикт
+        start = time()
+        verdict = generate_summary_and_verdict(checks)
+        print(f"📜 Вердикт: {verdict['decision']} (за {time() - start:.2f} сек)")
+
+        # 10. Сохранение в БД
         doc = Document(
             filename=file.filename,
             file_id=file_id,
@@ -119,8 +157,12 @@ async def upload_pdf(
         )
         session.add(doc)
         await session.commit()
+        print(f"🗂️ Документ сохранён в БД")
+
+        print(f"🏁 ВСЕГО: {time() - start_all:.2f} сек")
 
     except Exception as e:
+        print(f"❌ Ошибка обработки: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
 
     return JSONResponse(
