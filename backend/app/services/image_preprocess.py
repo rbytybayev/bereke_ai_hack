@@ -1,29 +1,21 @@
 import fitz  # PyMuPDF
 import cv2
 import numpy as np
-import tempfile
-import os
-
 
 def preprocess_pdf(filepath: str):
     doc = fitz.open(filepath)
-    processed_images = []
+    images = []
 
-    for i in range(len(doc)):
-        pix = doc[i].get_pixmap(dpi=300)
-        image_bytes = pix.tobytes("png")
+    for page in doc:
+        pix = page.get_pixmap(dpi=150)  # ↓ DPI для ускорения
+        img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
-            tmp.write(image_bytes)
-            tmp_path = tmp.name
+        if img.shape[2] == 4:
+            img = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
+        else:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        img = cv2.imread(tmp_path, cv2.IMREAD_GRAYSCALE)
-        os.unlink(tmp_path)
+        _, binarized = cv2.threshold(img, 150, 255, cv2.THRESH_BINARY)
+        images.append(binarized)
 
-        img = cv2.fastNlMeansDenoising(img, None, 30, 7, 21)
-        _, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        img = cv2.resize(img, (img.shape[1], img.shape[0]))  # ensure uniform size
-
-        processed_images.append(img)
-
-    return processed_images
+    return images

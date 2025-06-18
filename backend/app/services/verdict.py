@@ -3,7 +3,7 @@ import os
 import json
 
 MODEL_PATH = os.getenv("LLAMA_MODEL", "/app/models/llama-7b.gguf")
-llm = Llama(model_path=MODEL_PATH, n_ctx=2048, n_threads=4)
+llm = Llama(model_path=MODEL_PATH, n_ctx=2048, n_threads=4, n_batch=128)
 
 SUMMARY_PROMPT = """
 На основе следующих результатов проверки валютного договора сформируй краткое объяснение для клиента. Укажи, какие критерии не были пройдены и почему. Используй деловой стиль и пиши на русском языке. В конце сделай однозначный вывод: Принять или Отказать.

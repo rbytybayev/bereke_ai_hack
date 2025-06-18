@@ -1,8 +1,9 @@
 from llama_cpp import Llama
 import os
+import json
 
 MODEL_PATH = os.getenv("LLAMA_MODEL", "/app/models/llama-7b.gguf")
-llm = Llama(model_path=MODEL_PATH, n_ctx=2048, n_threads=4)
+llm = Llama(model_path=MODEL_PATH, n_ctx=2048, n_threads=4, n_batch=128)
 
 EXTRACTION_PROMPT = """
 Выдели из текста договора следующие параметры в формате JSON:
@@ -21,12 +22,11 @@ EXTRACTION_PROMPT = """
 """
 
 def extract_contract_parameters(text: str) -> dict:
-    prompt = EXTRACTION_PROMPT + text[:4000]  # ограничим ввод для скорости
+    prompt = EXTRACTION_PROMPT + text[:2000]
     result = llm(prompt, stop=["\n\n"], temperature=0.2)
     output = result["choices"][0]["text"].strip()
 
     try:
-        import json
         return json.loads(output)
     except Exception as e:
         raise ValueError(f"Ошибка при парсинге JSON из LLM: {str(e)}\nОтвет: {output}")
