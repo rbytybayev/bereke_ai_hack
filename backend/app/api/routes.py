@@ -13,7 +13,7 @@ from app.services.checker import run_checks
 from app.services.sanctions_loader import refresh_all_sanctions
 from app.core.auth import get_current_user, authenticate_user, get_password_hash, create_access_token
 from app.models.user_document import User, Document, StatusEnum
-from app.db import get_async_session
+from app.db.session import get_async_session 
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm

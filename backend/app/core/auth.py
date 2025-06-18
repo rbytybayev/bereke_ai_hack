@@ -5,7 +5,7 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.user_document import User
-from app.db import get_async_session
+from app.db.session import get_async_session
 import os
 import datetime
 
