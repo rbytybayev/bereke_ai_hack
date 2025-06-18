@@ -9,14 +9,15 @@ import sys
 
 # подключаем проектные модели
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from app.models.user_document import Base as UserBase
-from app.models.sanctions import Base as SanctionBase
+from app.db.session import Base
+
+target_metadata = Base.metadata
+from app.models import user_document, user, history
 
 config = context.config
 fileConfig(config.config_file_name)
 
 # несколько metadata из разных моделей
-target_metadata = [UserBase.metadata, SanctionBase.metadata]
 
 def run_migrations_offline():
     url = config.get_main_option("sqlalchemy.url")
