@@ -7,31 +7,32 @@ import time
 MODEL_PATH = os.getenv("LLAMA_MODEL", "/app/models/llama-7b.gguf")
 llm = Llama(
     model_path=MODEL_PATH,
-    n_ctx=2048,
+    n_ctx=1024,         # меньше контекст — быстрее
     n_threads=4,
-    n_batch=128  # ⏱ критично для скорости!
+    n_batch=128
 )
 
-EXTRACTION_PROMPT = """
-Ты — помощник валютного контроля. Проанализируй текст внешнеэкономического договора и верни следующие параметры в формате JSON:
+PROMPT = """
+Ты — помощник валютного контроля. Прочитай текст договора ниже и верни строго JSON со следующими полями:
 
 {
-  "contract_number": "номер договора",
-  "contract_date": "дата договора в формате YYYY-MM-DD",
-  "contract_amount": "сумма договора (число)",
-  "currency": "валюта (например, USD)",
-  "deal_type": "экспорт или импорт",
-  "tnved_code": "ТН ВЭД код (если есть)",
+  "contract_number": "...",
+  "contract_date": "YYYY-MM-DD",
+  "contract_amount": "...",
+  "currency": "...",
+  "deal_type": "...",
+  "tnved_code": "...",
   "foreign_partner": {
-    "name": "название контрагента",
-    "country": "страна",
-    "swift": "SWIFT-код (если есть)",
-    "address": "адрес"
+    "name": "...",
+    "country": "...",
+    "swift": "...",
+    "address": "..."
   },
-  "payment_terms": "условия оплаты (если есть)"
+  "payment_terms": "..."
 }
 
-🔒 ВАЖНО: Верни только корректный JSON, без пояснений. Начни ответ с символа `{`. Если не можешь извлечь — верни {"error": "failed"}.
+Ответ начни с символа { и верни только JSON. Никаких пояснений.
+Если не можешь — верни: {"error": "failed"}
 
 Текст:
 """
@@ -40,9 +41,9 @@ def extract_contract_parameters(text: str) -> dict:
     print("🧠 [LLM] Извлечение параметров договора...")
     start = time.time()
 
-    # Ограничим объём контекста для скорости и релевантности
-    context = text[:1500].strip()
-    prompt = EXTRACTION_PROMPT + context
+    context = text[:1200] + "\n\n" + text[-300:]  # начало + конец
+    prompt = PROMPT + context
+    print(f"🔎 [LLM prompt]: {prompt[:300]}...")
 
     result = llm(prompt, stop=["\n\n"], temperature=0.2)
     output = result["choices"][0]["text"].strip()
@@ -50,13 +51,14 @@ def extract_contract_parameters(text: str) -> dict:
     print(f"⏱️ [LLM] Время инференса: {time.time() - start:.2f} сек")
     print(f"📥 [LLM-ответ] {output[:200]}...")
 
+    # Поиск JSON-блока
     try:
         match = re.search(r"{.*}", output, re.DOTALL)
         if not match:
-            raise ValueError("Ответ не содержит JSON-блока")
-        parsed = json.loads(match.group(0))
-        if "error" in parsed:
-            raise ValueError("LLM вернула ошибку: failed")
-        return parsed
+            print("⚠️ [LLM] JSON не найден, возврат ошибки.")
+            return {"error": "failed"}
+        data = json.loads(match.group(0))
+        return data
     except Exception as e:
-        raise ValueError(f"Ошибка при парсинге JSON из LLM: {str(e)}\nОтвет: {output}")
+        print(f"🛑 [LLM] Ошибка JSON парсинга: {e}")
+        return {"error": "failed"}
