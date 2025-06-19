@@ -132,7 +132,21 @@ async def upload_pdf(
         start = time()
         contract_dict = extract_contract_parameters(extracted_text)
         print(f"📄 Извлечено полей: {list(contract_dict.keys())} (за {time() - start:.2f} сек)")
-
+	
+        if "error" in contract_dict:
+            print("⚠️ Пропускаем валидацию — модель не вернула параметры.")
+            return JSONResponse(
+                status_code=200,
+                content={
+                        "verdict": {
+                        "decision": "Отказать",
+                        "summary": "Модель не смогла извлечь параметры из договора"
+                    },
+                    "contract_data": {},
+                    "checks": [],
+                    "raw_output": contract_dict
+                }
+            )
         # 7. Валидация
         contract_data = ContractData(**contract_dict)
 

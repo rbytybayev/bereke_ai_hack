@@ -5,20 +5,24 @@ import re
 import time
 
 MODEL_PATH = os.getenv("LLAMA_MODEL", "/app/models/llama-7b.gguf")
+
 llm = Llama(
-    model_path=MODEL_PATH,
-    n_ctx=1024,         # меньше контекст — быстрее
-    n_threads=4,
-    n_batch=128
+    model_path=MODEL_PATH,  # 4-битный бинарник
+    n_ctx=3064,           # или меньше, в зависимости от размера чанка
+    n_threads=4,          # все ваши CPU-ядра
+    n_batch=8,            # меньшие батчи – быстрее отдача
+    f16_kv=True,          # хранить KV-кэш в fp16
+    use_mlock=True,       # фиксировать в памяти, если есть
 )
 
 PROMPT = """
-Ты — помощник валютного контроля. Прочитай текст договора ниже и верни строго JSON со следующими полями:
+Ты — ассистент валютного контроля. 
+Прочитай текст договора и верни ровно один JSON-объект по схеме:
 
 {
   "contract_number": "...",
-  "contract_date": "YYYY-MM-DD",
-  "contract_amount": "...",
+  "contract_date": "...",
+  "contract_amount": 0.0,
   "currency": "...",
   "deal_type": "...",
   "tnved_code": "...",
@@ -31,34 +35,40 @@ PROMPT = """
   "payment_terms": "..."
 }
 
-Ответ начни с символа { и верни только JSON. Никаких пояснений.
-Если не можешь — верни: {"error": "failed"}
+Возвращай только JSON — без пояснений, без лишних полей.  
+Если не можешь извлечь — верни ровно {"error":"failed"}  
+<<<END>>>
 
-Текст:
+ТЕКСТ ДОГОВОРА:
 """
 
+
+def chunk_text(tokens, max_len=512, overlap=64):
+    for i in range(0, len(tokens), max_len - overlap):
+        yield tokens[i : i + max_len]
+
 def extract_contract_parameters(text: str) -> dict:
-    print("🧠 [LLM] Извлечение параметров договора...")
-    start = time.time()
+    print("🧠 [LLM] Извлечение параметров...")
+    tokens = text.split()
+    for chunk in chunk_text(tokens):
+        prompt = PROMPT + " " + " ".join(chunk)
+        start = time.time()
+        resp = llm(
+            prompt,
+            stop=["<<<END>>>"],
+            temperature=0.0,
+            top_p=1.0,
+            max_tokens=256,
+        )
+        duration = time.time() - start
+        output = resp["choices"][0]["text"].strip()
+        print(f"⏱️ {duration:.2f}s, ответ: {output[:100]}")
 
-    context = text[:1200] + "\n\n" + text[-300:]  # начало + конец
-    prompt = PROMPT + context
-    print(f"🔎 [LLM prompt]: {prompt[:300]}...")
+        m = re.search(r"(\{.*\})", output, re.DOTALL)
+        if m:
+            try:
+                return json.loads(m.group(1))
+            except json.JSONDecodeError:
+                continue
 
-    result = llm(prompt, stop=["\n\n"], temperature=0.2)
-    output = result["choices"][0]["text"].strip()
-
-    print(f"⏱️ [LLM] Время инференса: {time.time() - start:.2f} сек")
-    print(f"📥 [LLM-ответ] {output[:200]}...")
-
-    # Поиск JSON-блока
-    try:
-        match = re.search(r"{.*}", output, re.DOTALL)
-        if not match:
-            print("⚠️ [LLM] JSON не найден, возврат ошибки.")
-            return {"error": "failed"}
-        data = json.loads(match.group(0))
-        return data
-    except Exception as e:
-        print(f"🛑 [LLM] Ошибка JSON парсинга: {e}")
-        return {"error": "failed"}
+    return {"error": "failed"}

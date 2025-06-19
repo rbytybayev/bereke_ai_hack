@@ -15,7 +15,7 @@ export default function UploadPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.post("http://127.0.0.1:8000/api/upload", formData, {
+      const res = await axios.post("http://localhost:8000/api/upload", formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       navigate(`/doc/${res.data.file_id}`);

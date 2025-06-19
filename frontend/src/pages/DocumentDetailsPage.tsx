@@ -13,7 +13,7 @@ export default function DocumentDetailsPage() {
 
   useEffect(() => {
     axios
-      .get(`/api/documents/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+      .get(`http://localhost:8000/api/documents/${id}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => setData(res.data))
       .catch(() => alert("Ошибка при получении данных документа"));
   }, [id]);
@@ -21,7 +21,7 @@ export default function DocumentDetailsPage() {
   const handleStatusUpdate = async () => {
     try {
       await axios.post(
-        "/api/update_status",
+        "http://localhost:8000/api/update_status",
         {
           file_id: id,
           new_status: status,

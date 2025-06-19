@@ -10,7 +10,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const url = isRegister ? "/api/auth/register" : "/api/auth/token";
+    const url = isRegister ? "http://localhost:8000/api/auth/register" : "http://localhost:8000/api/auth/token";
     try {
       const formData = new URLSearchParams();
       formData.append("username", username);

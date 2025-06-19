@@ -10,7 +10,7 @@ export default function MyDocumentsPage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     axios
-      .get("/api/documents/my", {
+      .get("http://localhost:8000/api/documents/my", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setDocs(res.data))
